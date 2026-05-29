@@ -1122,7 +1122,7 @@ td .name{color:var(--text);font-weight:500}
 // ==========================================================================
 
 
-// 反向量化 v3.2 — 三阶满级终极量化内核
+// 反向量化 v3.4 — 三阶满级终极量化内核
 
 
 // 完整复刻机构量化收割闭环 | 12大核心算法 | 六重风控 | 智能仓位
@@ -2448,7 +2448,7 @@ function calcRisk(){
 // ==========================================================================
 
 
-// 【终极评分引擎 v3.2】完全体12大算法融合
+// 【终极评分引擎 v3.4】完全体12大算法融合
 
 
 // ==========================================================================
@@ -3427,7 +3427,7 @@ function rSettings(){
   document.getElementById('algoParams').innerHTML='<div class="setting-row"><div class="info"><div class="label">三阶灵敏度</div><div class="desc">默认60(机构级)</div></div><div style="display:flex;align-items:center;gap:8px"><input type="range" min="10" max="100" value="'+CFG.sens+'" oninput="uAS(this)" style="width:120px;accent-color:var(--blue)"><span style="font-family:monospace;font-size:13px;color:var(--text)" id="sV">'+CFG.sens+'</span></div></div><div class="setting-row"><div class="info"><div class="label">扫描间隔</div><div class="desc">默认20s(加速)</div></div><div style="display:flex;align-items:center;gap:8px"><input type="range" min="5" max="120" value="'+CFG.interval+'" oninput="uSI(this)" style="width:120px;accent-color:var(--blue)"><span style="font-family:monospace;font-size:13px;color:var(--text)" id="sIV">'+CFG.interval+'s</span></div></div>';
 
 
-  document.getElementById('sysInfo').innerHTML='系统：反向量化 v3.2 三阶满级终极版<br>股票池：'+SPOOL.length+'只<br>引擎：12大核心算法 + 六重风控 + 智能仓位<br>核心功能：主力成本测算 | 三资拆分 | 洗盘拐点 | 冲高预判 | 六重风控 | 仓位分配<br>状态：✅ 永久顶配完整版 | 后续无需升级<br>扫描：'+new Date().toLocaleString()+'<br>信号：'+signalHistory.length+'条';
+  document.getElementById('sysInfo').innerHTML='系统：反向量化 v3.4 三阶满级终极版<br>股票池：'+SPOOL.length+'只<br>引擎：12大核心算法 + 六重风控 + 智能仓位<br>核心功能：主力成本测算 | 三资拆分 | 洗盘拐点 | 冲高预判 | 六重风控 | 仓位分配<br>状态：✅ 永久顶配完整版 | 后续无需升级<br>扫描：'+new Date().toLocaleString()+'<br>信号：'+signalHistory.length+'条';
 
 
 }
@@ -3598,7 +3598,7 @@ setInterval(updateClock,1000);
 
 
 
-console.log("QUANT_ENGINE_STARTING");try{loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();}catch(e){console.error("Init:",e);}setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
+console.log("QUANT_ENGINE_STARTING");document.addEventListener('DOMContentLoaded',function(){try{loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();}catch(e){console.error('Init:',e);}})setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
 
 
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
@@ -3607,7 +3607,7 @@ document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)c
 document.addEventListener('keydown',function(e){const p=['dashboard','pool','detail','signals','history','account','settings'];if(e.key>=1&&e.key<=7&&p[e.key-1])switchPage(p[e.key-1]);if(e.key==='r'||e.key==='R')runQuantScan();});
 
 
-console.log('\u2705 反向量化 v3.2 三阶满级终极版 | 12大算法 | 六重风控 | 智能仓位 | 永久顶配');
+console.log('\u2705 反向量化 v3.4 三阶满级终极版 | 12大算法 | 六重风控 | 智能仓位 | 永久顶配');
 
 
 </script>
