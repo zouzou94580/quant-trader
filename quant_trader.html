@@ -2854,7 +2854,7 @@ let GOLD_NEWS=[
 
 let GOLD_HIST=[];
 
-let GOLD_REC="持有";
+let GOLD_REC="持有";let GOLD_SCORE=50;
 
 
 
@@ -2868,8 +2868,8 @@ function updateGold(){
   const recent=GOLD_HIST.slice(0,10);
   let tw=0;
   for(const r of recent){const dir=r.w>0.3?1:-1;tw+=dir*r.w;}
-  const score=Math.round(tw*50+50);
-  if(score>=65)GOLD_REC="买入";else if(score>=45)GOLD_REC="持有";else GOLD_REC="卖出";
+  GOLD_SCORE=Math.round(tw*50+50);
+  if(GOLD_SCORE>=65)GOLD_REC="买入";else if(GOLD_SCORE>=45)GOLD_REC="持有";else GOLD_REC="卖出";
   // 刷新黄金卡片显示
   refreshGold();
 }
@@ -2884,8 +2884,8 @@ function refreshGold(){
     "<div style=font-size:13px;color:"+(trend>=0?"var(--red)":"var(--green)")+">"+(trend>=0?"↑":"↓")+Math.abs(trend).toFixed(2)+"</div></div>"+
     "<div style=text-align:center><div style=font-size:14px;color:var(--text2)>AI建议</div>"+
     "<div style=font-size:22px;font-weight:700;color:"+(GOLD_REC==="买入"?"var(--red)":GOLD_REC==="卖出"?"var(--green)":"var(--blue)")+">"+GOLD_REC+"</div></div>"+
-    "<div style=flex:1;min-width:100px><div class=progress-track><div class=progress-fill "+(score>=65?"red":score>=45?"orange":"blue")+" style=width:"+score+"%></div></div>"+
-    "<div style=font-size:11px;color:var(--text2);margin-top:4px>权重评分 "+score+"/100 | 近期"+(latest?latest.t:"")+"</div></div></div>"+
+    "<div style=flex:1;min-width:100px><div class=progress-track><div class=progress-fill "+(GOLD_SCORE>=65?"red":GOLD_SCORE>=45?"orange":"blue")+" style=width:"+GOLD_SCORE+"%></div></div>"+
+    "<div style=font-size:11px;color:var(--text2);margin-top:4px>权重评分 "+GOLD_SCORE+"/100 | 近期"+(latest?latest.t:"")+"</div></div></div>"+
     "<div style=display:flex;gap:4px;margin-top:8px>"+GOLD_HIST.slice(0,15).map(function(_,i){return '<div style=flex:1;height:30px;display:flex;align-items:flex-end><div style=width:100%;height:'+(5+Math.random()*25)+'px;border-radius:2px;background:'+(trend>=0?"var(--red)":"var(--green)")+';opacity:'+(0.3+i*0.05)+'></div></div>';}).join("")+"</div></div>";
 }
 
@@ -3598,7 +3598,7 @@ setInterval(updateClock,1000);
 
 
 
-console.log("QUANT_ENGINE_STARTING");loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
+console.log("QUANT_ENGINE_STARTING");try{loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();}catch(e){console.error("Init:",e);}setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
 
 
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
