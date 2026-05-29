@@ -1115,7 +1115,42 @@ function updateClock(){
 }
 setInterval(updateClock,1000);
 
-console.log("QUANT_ENGINE_STARTING");loadAcc();rSettings();rH();startAutoScan();updateClock();console.log("QUANT_ENGINE_RUNNING");
+console.log("QUANT_ENGINE_STARTING");
+// ===== 实时行情(新浪财经) =====
+var RPRICES={};var RDATA=false;
+function loadPrices(){
+  var a=[];
+  for(var i=0;i<SPOOL.length;i++){
+    var c=SPOOL[i].code;
+    a.push((c[0]==="6"?"sh":"sz")+c);
+  }
+  var s=document.createElement("script");
+  s.src="https://hq.sinajs.cn/list="+a.join(",");
+  s.charset="gbk";
+  document.head.appendChild(s);
+  setTimeout(function(){try{document.head.removeChild(s);}catch(e){}},4000);
+}
+function parsePrices(){
+  var n=0;
+  for(var i=0;i<SPOOL.length;i++){
+    var c=SPOOL[i].code,p=(c[0]==="6"?"sh":"sz")+c,m="hq_str_"+p;
+    if(typeof window[m]!=="undefined"){
+      var d=window[m].split(",");
+      if(d&&d.length>10){
+        var pr=parseFloat(d[3]),cl=parseFloat(d[2]),vo=parseFloat(d[8]);
+        if(pr>0){SPOOL[i].p=pr;SPOOL[i].v=Math.max(0.1,vo/1000000);RPRICES[c]=pr;n++;}
+      }
+      delete window[m];
+    }
+  }
+  if(n>0){RDATA=true;try{rD();rP();rTP();rS();}catch(e){}}
+}
+// 延时加载(等待页面初始化完成)
+setTimeout(function(){try{loadPrices();setTimeout(parsePrices,2000);}catch(e){}},3000);
+// 每120秒刷新
+setInterval(function(){try{loadPrices();setTimeout(parsePrices,3000);}catch(e){}},120000);
+
+loadAcc();rSettings();rH();startAutoScan();updateClock();console.log("QUANT_ENGINE_RUNNING");
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',function(e){const p=['dashboard','pool','detail','signals','history','settings'];if(e.key>=1&&e.key<=6&&p[e.key-1])switchPage(p[e.key-1]);if(e.key==='r'||e.key==='R')runQuantScan();});
 console.log('\u2705 反向量化 v3.2 三阶满级终极版 | 12大算法 | 六重风控 | 智能仓位 | 永久顶配');
