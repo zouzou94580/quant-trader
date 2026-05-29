@@ -3598,7 +3598,9 @@ setInterval(updateClock,1000);
 
 
 
-console.log("QUANT_ENGINE_STARTING");document.addEventListener('DOMContentLoaded',function(){try{loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();}catch(e){console.error('Init:',e);}})setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
+console.log("QUANT_ENGINE_STARTING");document.addEventListener('DOMContentLoaded',function(){try{loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();}catch(e){console.error('Init:',e);};
+});
+setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
 
 
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
