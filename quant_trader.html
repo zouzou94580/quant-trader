@@ -3021,7 +3021,7 @@ function runQuantScan(){
     document.getElementById('poolBadge').textContent=scoredStocks.filter(s=>s.score.ts>=CFG.thresh).length;
 
 
-    document.getElementById('engineStatus').textContent='运行中('+res.length+'只)';document.getElementById('statusMsg').textContent='已扫'+res.length+'只';
+    document.getElementById('engineStatus').textContent='运行中('+res.length+'只)';
 
 
     if(CFG.notif)genN();autoTradeAll();
