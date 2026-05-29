@@ -3552,22 +3552,26 @@ function createAccount(){const n=prompt("名称:","账户");if(!n)return;const c
 
 
 function switchPage(n){
-  $$('.page').forEach(p=>p.classList.remove('active'));
-  const e=document.getElementById('page-'+n);
-  if(e)e.classList.add('active');
-  $$('.nav-item').forEach(x=>x.classList.remove('active'));
-  const nav=document.querySelector('.nav-item[data-page="'+n+'"]');
+  // 隐藏所有页面
+  var pages=document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++)pages[i].classList.remove('active');
+  // 显示目标页面
+  var target=document.getElementById('page-'+n);
+  if(target)target.classList.add('active');
+  // 更新导航高亮
+  var navs=document.querySelectorAll('.nav-item');
+  for(var i=0;i<navs.length;i++)navs[i].classList.remove('active');
+  var nav=document.querySelector('.nav-item[data-page="'+n+'"]');
   if(nav)nav.classList.add('active');
-  // 切换时刷新对应页面内容
+  // 刷新页面内容
   try{
-    if(n==='dashboard')rD();
+    if(n==='dashboard'){rD();}
     else if(n==='pool'){runQuantScan();}
-    else if(n==='signals')rS();
-    else if(n==='history')rH();
-    else if(n==='account')rA();
-    else if(n==='settings')rSettings();
-    if(NEWS_HIST)rW();
-  }catch(e){console.error('switchPage:',e);}
+    else if(n==='signals'){rS();}
+    else if(n==='history'){rH();}
+    else if(n==='account'){rA();}
+    else if(n==='settings'){rSettings();}
+  }catch(e){console.error('page:'+n,e);}
 }
 
 
