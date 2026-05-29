@@ -215,7 +215,7 @@ td .name{color:var(--text);font-weight:500}
   <!-- 顶栏 -->
   <header class="topbar">
     <div class="title"><span>◈</span> 反向量化交易系统</div>
-    <div class="status"><span class="dot"></span><span id="statusText">量化引擎运行中</span></div>
+    <div class="status"><span class="dot"></span><span id="statusText">量化引擎运行中</span></div><div style="font-size:11px;color:var(--text3)" id="priceStatus">行情:等待</div>
     <div class="time" id="clock">--:--:--</div><div style="font-size:11px;color:var(--green)" id="sessionTag">🔵 盘中</div>
   </header>
 
@@ -1116,31 +1116,38 @@ function updateClock(){
 setInterval(updateClock,1000);
 
 console.log("QUANT_ENGINE_STARTING");
-// ===== 实时行情(东方财富) =====
+// ===== 实时行情 =====
 var RPRICES={};var RDATA=false;
-function fetchEM(){
-  var count=0;
-  function fetchOne(idx){
-    if(idx>=SPOOL.length){
-      if(count>0){RDATA=true;try{rD();rP();rTP();rS();}catch(e){}}
+function fetchRealPrices(){
+  var ps=document.getElementById("priceStatus");
+  if(ps)ps.textContent="行情:获取中";
+
+  var cnt=0;
+  // 逐只获取(东方财富API,支持CORS)
+  function next(i){
+    if(i>=SPOOL.length){
+      if(cnt>0){RDATA=true;try{rD();rP();rTP();rS();}catch(e){}if(ps)ps.textContent="行情:实时("+cnt+"只)";}else{if(ps)ps.textContent="行情:模拟";}
       return;
     }
-    var st=SPOOL[idx];
-    var market=(st.code[0]==="6"||st.code.slice(0,2)==="68")?"1":"0";
-    var url="https://push2his.eastmoney.com/api/qt/stock/get?secid="+market+"."+st.code+"&fields=f43,f50";
-    fetch(url).then(function(r){if(!r.ok)throw new Error();return r.json();})
+    var st=SPOOL[i],c=st.code;
+    var m=(c[0]==="6")?"1":"0";
+    fetch("https://push2his.eastmoney.com/api/qt/stock/get?secid="+m+"."+c+"&fields=f43,f50,f47")
+      .then(function(r){if(!r.ok)throw new Error(""+r.status);return r.json();})
       .then(function(d){
-        if(d&&d.data&&d.data.f43>0){
-          SPOOL[idx].p=d.data.f43/100;RPRICES[st.code]=d.data.f43/100;count++;
+        if(d&&d.data&&d.data.f43){
+          var pr=d.data.f43;var chg=d.data.f50;
+          if(pr>0){st.p=pr/100;RPRICES[c]=pr/100;cnt++;}
         }
       })
       .catch(function(){})
-      .then(function(){setTimeout(function(){fetchOne(idx+1);},50);});
+      .then(function(){setTimeout(function(){next(i+1);},30);});
   }
-  fetchOne(0);
+  next(0);
 }
-setTimeout(function(){fetchEM();},3000);
-setInterval(function(){fetchEM();},180000);
+// 延时启动
+setTimeout(function(){fetchRealPrices();},2000);setTimeout(function(){if(!RDATA){var ps=document.getElementById("priceStatus");if(ps)ps.textContent="行情:模拟(未连上)";}},15000);
+// 每2分钟刷新
+setInterval(function(){fetchRealPrices();},120000);
 
 
 
