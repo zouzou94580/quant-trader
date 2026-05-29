@@ -703,7 +703,7 @@ td .name{color:var(--text);font-weight:500}
       </div>
 
 
-      <div class="card" id="goldCard"></div>
+      <div class="card" id="goldCard"><div class=card-header><h3>🥇 黄金价格加载中...</h3></div></div>
 
       <div class="card">
 
@@ -2875,6 +2875,7 @@ function updateGold(){
 }
 function refreshGold(){
   const gc=document.getElementById("goldCard");if(!gc)return;
+  if(!GOLD_HIST.length){gc.innerHTML="<div class=card-header><h3>🥇 黄金</h3></div><div style=text-align:center;padding:20px;color:var(--text3)>等待数据...</div>";return;}
   const trend=GOLD_HIST.length>1?GOLD_PRICE-GOLD_HIST[0].price:0;
   const latest=GOLD_HIST[0];
   gc.innerHTML="<div class=card style=border-color:"+(trend>=0?"var(--red)":"var(--green)")+"><div class=card-header><h3>🥇 实时黄金 <span>XAU/USD</span></h3><div class=tag>"+new Date().toLocaleTimeString()+"</div></div>"+
