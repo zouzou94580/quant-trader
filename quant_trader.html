@@ -350,8 +350,8 @@ const cl=(v,mn,mx)=>Math.max(mn,Math.min(mx,v));
 const rn=(mn,mx)=>mn+Math.random()*(mx-mn),ri=(mn,mx)=>Math.floor(rn(mn,mx+1));
 
 // ===== 全局配置 =====
-const CFG={tpS:[3,6],slS:2.2,tpM:[8,15],slM:5,tMin:2.5,tMax:7,thresh:68,maxC:15,
-  sens:60,notif:true,interval:20,riskT:55,sH:35,cH:40,mCD:3};
+const CFG={tpS:[3,6],slS:2.2,tpM:[8,15],slM:5,tMin:2.5,tMax:7,thresh:60,maxC:15,
+  sens:60,notif:true,interval:20,riskT:55,sH:35,cH:40,mCD:2};
 
 // ===== 股票池(80只) =====
 const SPOOL=[
@@ -564,27 +564,27 @@ function sixLayerRisk(s){
   let riskScore=0;
 
   // 1. 利空减持检测
-  const hasBadNews=Math.random()>0.85;
+  const hasBadNews=Math.random()>0.92;
   if(hasBadNews){risks.push('利空减持');riskScore+=18;}
 
   // 2. 大宗交易监控(折价大宗=利空)
-  const blockTradeDiscount=Math.random()>0.8;
+  const blockTradeDiscount=Math.random()>0.90;
   if(blockTradeDiscount){risks.push('折价大宗');riskScore+=15;}
 
   // 3. 高管减持追踪
-  const execSell=Math.random()>0.85;
+  const execSell=Math.random()>0.92;
   if(execSell){risks.push('高管减持');riskScore+=15;}
 
   // 4. 阴跌趋势识别(连续多日小跌)
-  const silentDecline=Math.random()>0.75;
+  const silentDecline=Math.random()>0.88;
   if(silentDecline){risks.push('阴跌趋势');riskScore+=20;}
 
   // 5. 均线破位检测(跌破关键均线)
-  const brokenMA=Math.random()>0.7;
+  const brokenMA=Math.random()>0.85;
   if(brokenMA){risks.push('均线破位');riskScore+=17;}
 
   // 6. 黑天鹅预警(突发利空)
-  const blackSwan=Math.random()>0.92;
+  const blackSwan=Math.random()>0.96;
   if(blackSwan){risks.push('黑天鹅事件');riskScore+=25;}
 
   return{
@@ -818,26 +818,27 @@ function scoreStock(s,m){
   if(t.gz)b+=4;if(ob.pn==='买入准备')b+=8;if(mr.hr&&mr.sr>=2)b+=4;
   if(kd.lst==='真实支撑')b+=6;if(ob.ve.gr)b+=6;if(sh.heat>=70)b+=5;
   if(f.cc.hc)b+=8;if(ic.belowCost)b+=8;if(we.isRallyImminent)b+=12;
-  if(sc.mainConsistency)b+=8;if(slr.isSafe)b+=6;if(we.confidence==='高')b+=10;
+  if((f.sc_split||{}).mainConsistency)b+=8;if(slr.isSafe)b+=6;if(we.confidence==='高')b+=10;
 
   if(c.cl>25)p+=10;if(f.pt>20)p+=8;if(t.sd>10)p+=12;
   if(c.tr>45)p+=6;if(c.lw)p+=8;if(ob.rd&&ob.rc)p+=12;
   if(kd.fs)p+=15;if(ob.ve.fr)p+=8;if(ob.ve.ps)p+=10;
-  if(!sc.mainConsistency)p+=8;if(ob.topped)p+=15;
+  if(!(f.sc_split||{}).mainConsistency)p+=8;if(ob.topped)p+=15;
 
   // 仓位因素
   const posBonus=sp.marketScore>60?5:0;
 
-  let ts=f.sc*w.f+t.sc*w.t+c.sc*w.c+sr.ss*w.s+ob.sc*w.ob+kd.ss*w.kd+ob.ve.vs2*w.ve+we.isRallyImminent?50*w.we:we.washProgress*w.we*0.5+(sc.score*w.sc|0)+(ic.concentration*w.ic|0);
+  let ts=f.sc*w.f+t.sc*w.t+c.sc*w.c+sr.ss*w.s+ob.sc*w.ob+kd.ss*w.kd+ob.ve.vs2*w.ve+(we.isRallyImminent?50*w.we:we.washProgress*w.we*0.5)+(f.sc*0.12*w.sc)+(ic.concentration*w.ic*0.08);
   ts=ts+b-p+posBonus;ts=ts*(50+CFG.sens)/100;ts=cl(Math.round(ts),0,100);
 
   let er=m==='intraday'?2+ts*0.06:m==='nextday'?1.5+ts*0.05:m==='midterm'?5+ts*0.15:2+ts*0.07;
   er=Math.round(er*10)/10;
 
   let sg='';
-  if(ts>=CFG.thresh&&f.ga&&!f.fp&&ic.belowCost&&we.isRallyImminent&&!ob.topped)sg='买入';
-  else if(ts>=CFG.thresh-3&&ob.wc&&!f.fp&&ic.belowCost)sg='买入';
-  else if(ts>=CFG.thresh-5&&c.wp>60&&f.nf>0&&f.cc.hc)sg='关注';
+  if(ts>=CFG.thresh&&f.ga&&!f.fp&&!ob.topped)sg='买入';
+  else if(ts>=CFG.thresh-5&&ob.wc&&!f.fp&&we.daysToRally<15)sg='买入';
+  else if(ts>=CFG.thresh-8&&c.wp>55&&f.nf>0)sg='关注';
+  else if(ts>=CFG.thresh-10&&f.cc.hc&&!f.fp)sg='关注';
   else if(ts<=35||ob.topped)sg='卖出';
   else if(ob.rd&&ob.rc&&mr.rs>50)sg='卖出';
   else if(slr.hasAnyRisk)sg='卖出';
@@ -847,7 +848,7 @@ function scoreStock(s,m){
   else if(ts>50&&c.tw&&f.cc.hc)st='隔日复利';
   else if(ts>40&&c.wp>55)st='隔日复利';else st='中线波段';
 
-  return{ts,er,sg,st,ok:true,f,c,t,sr,ob,mr,kd,we,slr,sc_split:sc,ic,sh,sp,
+  return{ts,er,sg,st,ok:true,f,c,t,sr,ob,mr,kd,we,slr,sc_split:(f.sc_split||{}),ic,sh,sp,
     b:Math.round(b),p:Math.round(p),posBonus:Math.round(posBonus),
     fs:f.sc,tsc:t.sc,cs:c.sc,ss:sr.ss,os:ob.sc};
 }
@@ -874,26 +875,30 @@ let scoredStocks=[],signalHistory=JSON.parse(localStorage.getItem('qs')||'[]');
 let scanTimer=null,marketRisk=calcRisk();
 
 function runQuantScan(){
-  const risk=calcRisk();marketRisk=risk;
-  let max=CFG.maxC;if(risk.rs>=80)max=3;else if(risk.rs>=60)max=8;
-  const res=[],mode=document.getElementById('poolModeFilter')?.value||'all';
-  for(const st of SPOOL){
-    const sc=scoreStock(st,mode);
-    st.p=Math.round((st.p*(1+(Math.random()-0.5)*0.02))*100)/100;
-    st.v=Math.round((st.v*(1+(Math.random()-0.3)*0.1))*10)/10;
-    st.t=Math.round((st.t*(1+(Math.random()-0.3)*0.08))*10)/10;
-    if(sc.ts>=20)res.push({...st,score:sc});
-  }
-  res.sort((a,b)=>b.score.ts-a.score.ts);
-  scoredStocks=res.slice(0,max);
-  document.getElementById('scannedCount').textContent=res.length;
-  document.getElementById('todaySignalCount').textContent=signalHistory.length;
-  rD();rP();rS();rTP();rSF();uB();
-  document.getElementById('poolBadge').textContent=scoredStocks.filter(s=>s.score.ts>=CFG.thresh).length;
-  if(CFG.notif)genN();
+  try{
+    document.getElementById('engineStatus').textContent='扫描中';
+    const risk=calcRisk();marketRisk=risk;
+    let max=CFG.maxC;if(risk.rs>=80)max=3;else if(risk.rs>=60)max=8;
+    const res=[],mode=document.getElementById('poolModeFilter')?.value||'all';
+    for(const st of SPOOL){
+      const sc=scoreStock(st,mode);
+      st.p=Math.round((st.p*(1+(Math.random()-0.5)*0.02))*100)/100;
+      st.v=Math.round((st.v*(1+(Math.random()-0.3)*0.1))*10)/10;
+      st.t=Math.round((st.t*(1+(Math.random()-0.3)*0.08))*10)/10;
+      if(sc.ts>=20)res.push({...st,score:sc});
+    }
+    res.sort((a,b)=>b.score.ts-a.score.ts);
+    scoredStocks=res.slice(0,max);
+    document.getElementById('scannedCount').textContent=res.length;
+    document.getElementById('todaySignalCount').textContent=signalHistory.length;
+    rD();rP();rS();rTP();rSF();uB();
+    document.getElementById('poolBadge').textContent=scoredStocks.filter(s=>s.score.ts>=CFG.thresh).length;
+    document.getElementById('engineStatus').textContent='运行中('+res.length+'只)';document.getElementById('statusMsg').textContent='已扫'+res.length+'只';
+    if(CFG.notif)genN();
+  }catch(e){console.error('扫描异常:',e);document.getElementById('engineStatus').textContent='异常:'+e.message;}
 }
 
-function startAutoScan(){runQuantScan();if(scanTimer)clearInterval(scanTimer);scanTimer=setInterval(runQuantScan,CFG.interval*1000);}
+function startAutoScan(){console.log("FIRST_SCAN_STARTING");runQuantScan();if(scanTimer)clearInterval(scanTimer);scanTimer=setInterval(runQuantScan,CFG.interval*1000);}
 
 // ===== 通知 =====
 let lN=0;
@@ -1047,7 +1052,7 @@ function updateClock(){
 }
 setInterval(updateClock,1000);
 
-rSettings();rH();startAutoScan();updateClock();
+console.log("QUANT_ENGINE_STARTING");rSettings();rH();startAutoScan();updateClock();console.log("QUANT_ENGINE_RUNNING");
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',function(e){const p=['dashboard','pool','detail','signals','history','settings'];if(e.key>=1&&e.key<=6&&p[e.key-1])switchPage(p[e.key-1]);if(e.key==='r'||e.key==='R')runQuantScan();});
 console.log('\u2705 反向量化 v3.2 三阶满级终极版 | 12大算法 | 六重风控 | 智能仓位 | 永久顶配');
