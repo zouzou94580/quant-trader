@@ -1116,39 +1116,34 @@ function updateClock(){
 setInterval(updateClock,1000);
 
 console.log("QUANT_ENGINE_STARTING");
-// ===== 实时行情(新浪财经) =====
+// ===== 实时行情(东方财富) =====
 var RPRICES={};var RDATA=false;
-function loadPrices(){
-  var a=[];
-  for(var i=0;i<SPOOL.length;i++){
-    var c=SPOOL[i].code;
-    a.push((c[0]==="6"?"sh":"sz")+c);
-  }
-  var s=document.createElement("script");
-  s.src="https://hq.sinajs.cn/list="+a.join(",");
-  s.charset="gbk";
-  document.head.appendChild(s);
-  setTimeout(function(){try{document.head.removeChild(s);}catch(e){}},4000);
-}
-function parsePrices(){
-  var n=0;
-  for(var i=0;i<SPOOL.length;i++){
-    var c=SPOOL[i].code,p=(c[0]==="6"?"sh":"sz")+c,m="hq_str_"+p;
-    if(typeof window[m]!=="undefined"){
-      var d=window[m].split(",");
-      if(d&&d.length>10){
-        var pr=parseFloat(d[3]),cl=parseFloat(d[2]),vo=parseFloat(d[8]);
-        if(pr>0){SPOOL[i].p=pr;SPOOL[i].v=Math.max(0.1,vo/1000000);RPRICES[c]=pr;n++;}
-      }
-      delete window[m];
+function fetchEM(){
+  var count=0;
+  function fetchOne(idx){
+    if(idx>=SPOOL.length){
+      if(count>0){RDATA=true;try{rD();rP();rTP();rS();}catch(e){}}
+      return;
     }
+    var st=SPOOL[idx];
+    var market=(st.code[0]==="6"||st.code.slice(0,2)==="68")?"1":"0";
+    var url="https://push2his.eastmoney.com/api/qt/stock/get?secid="+market+"."+st.code+"&fields=f43,f50";
+    fetch(url).then(function(r){if(!r.ok)throw new Error();return r.json();})
+      .then(function(d){
+        if(d&&d.data&&d.data.f43>0){
+          SPOOL[idx].p=d.data.f43/100;RPRICES[st.code]=d.data.f43/100;count++;
+        }
+      })
+      .catch(function(){})
+      .then(function(){setTimeout(function(){fetchOne(idx+1);},50);});
   }
-  if(n>0){RDATA=true;try{rD();rP();rTP();rS();}catch(e){}}
+  fetchOne(0);
 }
-// 延时加载(等待页面初始化完成)
-setTimeout(function(){try{loadPrices();setTimeout(parsePrices,2000);}catch(e){}},3000);
-// 每120秒刷新
-setInterval(function(){try{loadPrices();setTimeout(parsePrices,3000);}catch(e){}},120000);
+setTimeout(function(){fetchEM();},3000);
+setInterval(function(){fetchEM();},180000);
+
+
+
 
 loadAcc();rSettings();rH();startAutoScan();updateClock();console.log("QUANT_ENGINE_RUNNING");
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
