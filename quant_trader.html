@@ -1155,7 +1155,7 @@ const rn=(mn,mx)=>mn+Math.random()*(mx-mn),ri=(mn,mx)=>Math.floor(rn(mn,mx+1));
 // ===== 全局配置 =====
 
 
-const CFG={tpS:[3,6],slS:2.2,tpM:[8,15],slM:5,tMin:2.5,tMax:7,thresh:60,maxC:15,
+const CFG={tpS:[3,6],slS:2.2,tpM:[8,15],slM:5,tMin:2.5,tMax:7,thresh:45,maxC:15,
 
 
   sens:60,notif:true,interval:20,riskT:55,sH:35,cH:40,mCD:2};
@@ -2922,6 +2922,7 @@ function removeWatch(code){
 }
 
 function rW(){
+  if(!document.getElementById("watchlist"))return;
 
   const el=document.getElementById("watchlist");
 
@@ -2997,7 +2998,7 @@ function runQuantScan(){
       st.t=Math.round((st.t*(1+(Math.random()-0.3)*0.08))*10)/10;
 
 
-      if(sc.ts>=20)res.push({...st,score:sc});
+      if(sc.ts>=10)res.push({...st,score:sc});
 
 
     }
@@ -3015,7 +3016,7 @@ function runQuantScan(){
     document.getElementById('todaySignalCount').textContent=signalHistory.length;
 
 
-    rD();rP();rS();rTP();rSF();uB();rW();
+    rD();rP();rS();rTP();rSF();uB();rW();rH();
 
 
     document.getElementById('poolBadge').textContent=scoredStocks.filter(s=>s.score.ts>=CFG.thresh).length;
@@ -3100,6 +3101,7 @@ function genN(){
 
 
 function rD(){
+  if(!document.getElementById("dashboardMetrics"))return;
 
 
   const r=marketRisk;
@@ -3200,6 +3202,7 @@ function rD(){
 
 
 function rP(){
+  if(!document.getElementById("poolTable"))return;
 
 
   const mode=document.getElementById('poolModeFilter')?.value||'all',tb=document.getElementById('poolTable'),em=document.getElementById('poolEmpty');
@@ -3236,6 +3239,16 @@ function rTP(){const t5=scoredStocks.slice(0,5);document.getElementById('poolCou
 
 
 function rS(){
+  if(!document.getElementById("buySignalTable"))return;
+  if(!scoredStocks||!scoredStocks.length){
+    document.getElementById("buyCount").textContent="(0)";
+    document.getElementById("sellCount").textContent="(0)";
+    document.getElementById("buySignalTable").innerHTML="";
+    document.getElementById("sellSignalTable").innerHTML="";
+    document.getElementById("buyEmpty").style.display="block";
+    document.getElementById("sellEmpty").style.display="block";
+    return;
+  }
 
 
   const buys=scoredStocks.filter(s=>s.score.sg==='买入'||s.score.sg==='关注').slice(0,10);
@@ -3283,7 +3296,9 @@ function rSF(){const f=document.getElementById('signalFeed'),s=scoredStocks.filt
 
 
 
-function rH(){const tb=document.getElementById('historyTable'),em=document.getElementById('historyEmpty');if(!signalHistory.length){tb.innerHTML='';em.style.display='block';return;}em.style.display='none';tb.innerHTML=signalHistory.slice(0,50).map(h=>'<tr><td style="font-size:12px;color:var(--text2)">'+h.time+'</td><td style="color:'+(h.type==='买入'?'var(--red)':'var(--green)')+'">'+h.type+'</td><td><span class="code">'+h.code+'</span></td><td><span class="name">'+h.name+'</span></td><td>'+h.price.toFixed(2)+'</td><td style="color:var(--green)">'+h.expected+'</td><td style="font-size:12px;color:var(--blue)">'+h.strategy+'</td><td>'+h.score+'</td></tr>').join('');}
+function rH(){
+  if(!document.getElementById("historyTable"))return;
+  if(!signalHistory)signalHistory=[];const tb=document.getElementById('historyTable'),em=document.getElementById('historyEmpty');if(!signalHistory.length){tb.innerHTML='';em.style.display='block';return;}em.style.display='none';tb.innerHTML=signalHistory.slice(0,50).map(h=>'<tr><td style="font-size:12px;color:var(--text2)">'+h.time+'</td><td style="color:'+(h.type==='买入'?'var(--red)':'var(--green)')+'">'+h.type+'</td><td><span class="code">'+h.code+'</span></td><td><span class="name">'+h.name+'</span></td><td>'+h.price.toFixed(2)+'</td><td style="color:var(--green)">'+h.expected+'</td><td style="font-size:12px;color:var(--blue)">'+h.strategy+'</td><td>'+h.score+'</td></tr>').join('');}
 
 
 
@@ -3383,8 +3398,7 @@ function switchMode(el,m){$$('.mode-tab').forEach(t=>t.classList.remove('active'
 
 
 function rSettings(){
-
-
+  if(!document.getElementById("settingsList"))return;
   const items=[
 
 
@@ -3461,6 +3475,8 @@ function cH(){if(confirm('清空所有历史信号？')){signalHistory=[];localS
 
 
 function rA(){
+  if(!document.getElementById("accountSummary"))return;
+  loadAcc();
 
 
   loadAcc();const a=CUR_ACC||ACCOUNTS[0];
@@ -3615,7 +3631,7 @@ setInterval(updateClock,1000);
 
 
 
-console.log("QUANT_ENGINE_STARTING");document.addEventListener('DOMContentLoaded',function(){try{loadAcc();rSettings();rH();startAutoScan();updateGold();refreshGold();updateClock();}catch(e){console.error('Init:',e);};
+console.log("QUANT_ENGINE_STARTING");document.addEventListener('DOMContentLoaded',function(){try{loadAcc();rSettings();rH();startAutoScan();setTimeout(function(){try{autoTradeAll();}catch(e){}},3000);updateGold();refreshGold();updateClock();}catch(e){console.error('Init:',e);};
 });
 setInterval(function(){rW();},5000);setInterval(function(){if(Math.random()>0.85)genNews();rA();},15000);setInterval(refreshGold,5000);console.log("QUANT_ENGINE_RUNNING");
 
