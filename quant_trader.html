@@ -200,6 +200,10 @@ td .name{color:var(--text);font-weight:500}
     <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
     <span>记录</span>
   </div>
+  <div class="nav-item" data-page="account" onclick="switchPage('account')">
+    <svg viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+    <span>账户</span>
+  </div>
   <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
     <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.488.488 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
     <span>设置</span>
@@ -297,7 +301,13 @@ td .name{color:var(--text);font-weight:500}
     </div>
 
     <!-- ======== 页面6: 设置 ======== -->
-    <div class="page" id="page-settings">
+    <div class="page" id="page-account">
+  <div class="card"><div class="card-header"><h3>虚拟账户</h3><div style="display:flex;gap:4px"><button class="btn btn-primary" onclick="createAccount()" style="padding:4px 10px;font-size:11px">+新建</button><button class="btn btn-ghost" onclick="autoTradeAll();rA();" style="padding:4px 10px;font-size:11px">AI调仓</button></div></div><div id="accountSummary"></div></div>
+  <div class="card"><div class="card-header"><h3>持仓</h3></div><table style="width:100%;font-size:13px"><thead><tr><th>代码</th><th>名称</th><th>持股</th><th>成本</th><th>现价</th><th>盈亏</th></tr></thead><tbody id="posTable"></tbody></table><p id="posEmpty" style="text-align:center;padding:12px;color:var(--text3)">空仓</p></div>
+  <div class="card"><div class="card-header"><h3>盈亏统计</h3></div><div id="pnlGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div></div>
+  <div class="card"><div class="card-header"><h3>交易记录</h3></div><table style="width:100%;font-size:13px"><thead><tr><th>时间</th><th>方向</th><th>名称</th><th>数量</th><th>价格</th></tr></thead><tbody id="tradeTable"></tbody></table><p id="tradeEmpty" style="text-align:center;padding:12px;color:var(--text3)">暂无交易</p></div>
+</div>
+<div class="page" id="page-settings">
       <div class="card">
         <div class="card-header"><h3>量化风控设置</h3></div>
         <div id="settingsList"></div>
@@ -869,6 +879,35 @@ function analyzeKL(s){
 }
 
 // ==========================================================================
+
+let ACCOUNTS=[];let TRADES=[];let CUR_ACC=null;
+function loadAcc(){try{ACCOUNTS=JSON.parse(localStorage.getItem("qa")||"[]");}catch(e){ACCOUNTS=[];}
+  if(!ACCOUNTS.length){ACCOUNTS=[{id:"a1",name:"默认",cap:100000,cash:100000,pos:{}}];saveAcc();}
+  CUR_ACC=ACCOUNTS[0];}
+function saveAcc(){localStorage.setItem("qa",JSON.stringify(ACCOUNTS));}
+function accVal(a){let m=0;for(const k of Object.keys(a.pos||{})){const p=a.pos[k],st=SPOOL.find(x=>x.code===k);m+=p.s*(st?st.p:p.c);}return a.cash+m;}
+function dayPNL(id){const td=TRADES.filter(t=>t.a===id&&new Date(t.t).toDateString()===new Date().toDateString());return Math.round(td.reduce((s,t)=>s+(t.pnl||0),0)*100)/100;}
+function periodPNL(id,days){const cut=Date.now()-days*86400000;const td=TRADES.filter(t=>t.a===id&&t.t>cut&&t.d==="s");return Math.round(td.reduce((s,t)=>s+(t.pnl||0),0)*100)/100;}
+function alloc(st,sc,cash){if(!sc||sc.ts<55||!sc.ok||sc.sg==="卖出"||sc.fp)return 0;const r=sc.ts>=80?0.3:(sc.ts>=70?0.2:0.1);return Math.max(0,Math.floor(cash*r/st.p/100)*100);}
+function execTrade(id,code,name,dir,price,shares,reason){
+  const a=ACCOUNTS.find(x=>x.id===id);if(!a||!shares)return;
+  const amt=price*shares*(dir==="b"?1.0003:0.9997);
+  if(dir==="b"){if(a.cash<amt)return;a.cash-=amt;
+    if(!a.pos[code])a.pos[code]={s:0,c:0};const p=a.pos[code];const tc=p.c*p.s+price*shares;p.s+=shares;p.c=tc/p.s;}
+  else{const p=a.pos[code];if(!p||p.s<shares)return;const pnl=(price-p.c)*shares;a.cash+=amt;p.s-=shares;if(p.s<=0)delete a.pos[code];}
+  TRADES.push({a:id,code,name,dir,price,shares,pnl:(dir==="s"?(price-(a.pos[code]?a.pos[code].c:0))*shares:0),reason,t:Date.now()});
+  if(TRADES.length>500)TRADES=TRADES.slice(-500);saveAcc();
+}
+function autoTradeAll(){
+  loadAcc();
+  for(const a of ACCOUNTS){
+    for(const code of Object.keys(a.pos||{})){const st=SPOOL.find(x=>x.code===code);if(!st)continue;
+      const sc=scoreStock(st,"all");if(!sc.ok||sc.sg==="卖出"||sc.ts<30)execTrade(a.id,code,st.name,"s",st.p,a.pos[code].s,"风控");}
+    for(let i=0;i<Math.min(3,scoredStocks.length);i++){const s=scoredStocks[i];if(!s||!s.score||a.pos[s.code])continue;
+      const sh=alloc(s,s.score,a.cash);if(sh>=100)execTrade(a.id,s.code,s.name,"b",s.p,sh,"AI");}}
+  saveAcc();
+}
+
 // 扫描引擎(加速版)
 // ==========================================================================
 let scoredStocks=[],signalHistory=JSON.parse(localStorage.getItem('qs')||'[]');
@@ -1031,6 +1070,30 @@ function uAS(el){CFG.sens=parseInt(el.value);document.getElementById('sV').textC
 function uSI(el){CFG.interval=parseInt(el.value);document.getElementById('sIV').textContent=CFG.interval+'s';if(scanTimer){clearInterval(scanTimer);scanTimer=setInterval(runQuantScan,CFG.interval*1000);}}
 function cH(){if(confirm('清空所有历史信号？')){signalHistory=[];localStorage.setItem('qs','[]');rH();showN('info','已清空','历史信号已清除',false);}}
 
+
+function rA(){
+  if(!document.getElementById("accountSummary"))return;
+  loadAcc();const a=CUR_ACC||ACCOUNTS[0];
+  if(!a){document.getElementById("accountSummary").innerHTML='<div style=text-align:center;padding:20px;color:var(--text3)>点新建创建账户</div>';return;}
+  const v=accVal(a),pl=v-a.cap,pc=a.cap>0?(pl/a.cap*100):0,dp=dayPNL(a.id),p7=periodPNL(a.id,7),p30=periodPNL(a.id,30);
+  document.getElementById("accountSummary").innerHTML='<div style=display:grid;grid-template-columns:repeat(3,1fr);gap:8px>'+
+    '<div class=quant-item><div class=qlabel>总资产</div><div class=qvalue style=color:var(--blue)>'+fmt(v,0)+'</div></div>'+
+    '<div class=quant-item><div class=qlabel>总盈亏</div><div class=qvalue style=color:'+(pl>=0?"var(--red)":"var(--green)")+'>'+fm(pl)+' ('+pc.toFixed(1)+'%)</div></div>'+
+    '<div class=quant-item><div class=qlabel>当日</div><div class=qvalue style=color:'+(dp>=0?"var(--red)":"var(--green)")+'>'+fmt(dp,0)+'</div></div></div>';
+  const pk=Object.keys(a.pos||{});
+  if(!pk.length){document.getElementById("posTable").innerHTML="";document.getElementById("posEmpty").style.display="block";}
+  else{document.getElementById("posEmpty").style.display="none";
+    document.getElementById("posTable").innerHTML=pk.map(function(co){const p=a.pos[co],st=SPOOL.find(function(x){return x.code===co;});const pr=st?st.p:p.c;return '<tr><td>'+co+'</td><td>'+(st?st.name:co)+'</td><td>'+p.s+'</td><td>'+p.c.toFixed(2)+'</td><td>'+pr.toFixed(2)+'</td><td style=color:'+((pr-p.c)>=0?"var(--red)":"var(--green)")+'>'+fmt((pr-p.c)*p.s,0)+'</td></tr>';}).join("");}
+  document.getElementById("pnlGrid").innerHTML='<div class=quant-item><div class=qlabel>当日盈亏</div><div class=qvalue style=color:'+(dp>=0?"var(--red)":"var(--green)")+'>'+fmt(dp,0)+'</div></div>'+
+    '<div class=quant-item><div class=qlabel>近7日</div><div class=qvalue style=color:'+(p7>=0?"var(--red)":"var(--green)")+'>'+fmt(p7,0)+'</div></div>'+
+    '<div class=quant-item><div class=qlabel>近30日</div><div class=qvalue style=color:'+(p30>=0?"var(--red)":"var(--green)")+'>'+fmt(p30,0)+'</div></div>';
+  const trades=TRADES.filter(function(t){return t.a===a.id;}).slice(-20).reverse();
+  if(!trades.length){document.getElementById("tradeTable").innerHTML="";document.getElementById("tradeEmpty").style.display="block";}
+  else{document.getElementById("tradeEmpty").style.display="none";
+    document.getElementById("tradeTable").innerHTML=trades.map(function(t){return '<tr><td style=font-size:12px>'+new Date(t.t).toLocaleString()+'</td><td style=color:'+(t.d==="b"?"var(--red)":"var(--green)")+'>'+(t.d==="b"?"买入":"卖出")+'</td><td>'+t.name+'</td><td>'+t.shares+'</td><td>'+t.price.toFixed(2)+'</td></tr>';}).join("");}
+}
+function createAccount(){const n=prompt("名称:","账户");if(!n)return;const cap=parseFloat(prompt("初始资金:","100000"))||100000;
+  ACCOUNTS.push({id:"a"+Date.now(),name:n,cap:cap,cash:cap,pos:{}});CUR_ACC=ACCOUNTS[ACCOUNTS.length-1];saveAcc();rA();}
 function switchPage(n){$$('.page').forEach(p=>p.classList.remove('active'));const e=document.getElementById('page-'+n);if(e)e.classList.add('active');$$('.nav-item').forEach(x=>x.classList.remove('active'));const nav=document.querySelector('.nav-item[data-page="'+n+'"]');if(nav)nav.classList.add('active');}
 function showModal(t,b){document.getElementById('modalTitle').textContent=t;document.getElementById('modalBody').innerHTML=typeof b==='string'?b:b.outerHTML;document.getElementById('modalOverlay').classList.add('active');}
 function closeModal(){document.getElementById('modalOverlay').classList.remove('active');}
@@ -1052,7 +1115,7 @@ function updateClock(){
 }
 setInterval(updateClock,1000);
 
-console.log("QUANT_ENGINE_STARTING");rSettings();rH();startAutoScan();updateClock();console.log("QUANT_ENGINE_RUNNING");
+console.log("QUANT_ENGINE_STARTING");loadAcc();rSettings();rH();startAutoScan();updateClock();console.log("QUANT_ENGINE_RUNNING");
 document.getElementById('modalOverlay').onclick=function(e){if(e.target===this)closeModal();};
 document.addEventListener('keydown',function(e){const p=['dashboard','pool','detail','signals','history','settings'];if(e.key>=1&&e.key<=6&&p[e.key-1])switchPage(p[e.key-1]);if(e.key==='r'||e.key==='R')runQuantScan();});
 console.log('\u2705 反向量化 v3.2 三阶满级终极版 | 12大算法 | 六重风控 | 智能仓位 | 永久顶配');
